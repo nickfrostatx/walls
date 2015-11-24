@@ -1,0 +1,16 @@
+language: python
+
+python:
+  - '3.5'
+
+env:
+  - TOXENV=py35,coveralls
+  - TOXENV=py34,coveralls
+  - TOXENV=py33,coveralls
+  - TOXENV=py27,coveralls
+  - TOXENV=py26,coveralls
+  - TOXENV=pypy,coveralls
+
+install: pip install tox
+
+script: tox
