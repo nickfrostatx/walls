@@ -4,7 +4,7 @@ from setuptools import setup
 import re
 
 version = ''
-with open('walls/__init__.py', 'r') as f:
+with open('walls.py', 'r') as f:
     version = re.search(r'__version__\s*=\s*\'([\d.]+)\'', f.read()).group(1)
 
 with open('README.rst') as f:
@@ -21,8 +21,10 @@ setup(
     url='https://github.com/nickfrostatx/walls',
     description='Random flickr wallpapers.',
     long_description=readme + '\n\n' + history,
-    packages=['walls'],
-    install_requires=[],
+    py_modules=['walls'],
+    install_requires=[
+        'flickrapi',
+    ],
     extras_require={
         'testing': [
             'pytest',
@@ -30,6 +32,9 @@ setup(
             'pytest-pep8',
             'pytest-pep257',
         ],
+    },
+    entry_points={
+        'console_scripts': 'walls=walls:main'
     },
     license='MIT',
     keywords='walls',
@@ -41,6 +46,7 @@ setup(
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.2',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
