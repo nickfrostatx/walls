@@ -75,7 +75,7 @@ def load_config(args):
     int_keys = ['height', 'width']
     for key in set(int_keys):
         try:
-            config['walls'][key] = int(config['walls'][key])
+            int(config['walls'][key])
             int_keys.remove(key)
         except ValueError:
             pass
