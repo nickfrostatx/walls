@@ -1,5 +1,5 @@
 test:
-	py.test -vv --pep8 --cov=walls --cov-report=term-missing test_walls.py
+	py.test -vv --pep8 --cov=walls --cov-report=term-missing
 
 publish:
 	python setup.py register
