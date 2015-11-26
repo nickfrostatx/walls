@@ -29,22 +29,29 @@ def walls(config):
     return Walls(cfg)
 
 
-class SystemExitContext(pytest.RaisesException):
+class SystemExitContext(object):
 
     """Run pytest.raises, and check the error message"""
 
-    def __init__(self, msg):
+    def __init__(self, msg, capsys):
         self.raises = pytest.raises(SystemExit)
+        self.capsys = capsys
         self.msg = msg
 
     def __enter__(self):
-        self.raises.__enter__()
+        return self.raises.__enter__()
+
+    def __exit__(self, *args):
+        assert self.capsys.readouterr()[1] == self.msg
+        return self.raises.__exit__(*args)
 
 
 @pytest.fixture
 def errmsg(capsys):
     """Make sure we exit with the given error message."""
-    return SystemExitContext
+    def fixture(msg):
+        return SystemExitContext(msg, capsys)
+    return fixture
 
 
 def test_stderr_and_exit(errmsg):
@@ -53,12 +60,10 @@ def test_stderr_and_exit(errmsg):
         stderr_and_exit('Some error message')
 
 
-def test_usage(capsys):
+def test_usage(errmsg):
     """Make sure we print out the usage if the arguments are invalid."""
-    with pytest.raises(SystemExit):
+    with errmsg('Usage: walls [config_file]\n'):
         load_config(['walls', 'config_file', 'blah'])
-    out, err = capsys.readouterr()
-    assert err == 'Usage: walls [config_file]\n'
 
 
 def test_default_config(config, monkeypatch):
