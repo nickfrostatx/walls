@@ -1,5 +1,5 @@
 walls
-===============================
+=====
 
 .. image:: https://img.shields.io/travis/nickfrostatx/walls.svg
     :target: https://travis-ci.org/nickfrostatx/walls
