@@ -10,9 +10,11 @@ import flickrapi
 import os.path
 import sys
 try:
+    # Python 3.x
     from configparser import ConfigParser
 except ImportError:
-    from ConfigParser import ConfigParser
+    # Python 2.x
+    from ConfigParser import SafeConfigParser as ConfigParser
 
 
 __author__ = 'Nick Frost'
@@ -28,13 +30,14 @@ class Walls(object):
 
     def __init__(self, config):
         self.config = config
-        self.flickr = flickrapi.FlickrAPI(config['walls'], self.api_secret)
+        self.flickr = flickrapi.FlickrAPI(config.get('walls', 'api_key'),
+                                          config.get('walls', 'api_secret'))
 
     def download_photo(self):
         photo = first_photo()
 
     def first_photo():
-        results = flickr.walk(tags=config['tags'], format='json')
+        results = flickr.walk(tags=config.get('walls', 'tags'), format='json')
         for photo in results.get('photos', []):
             if self.is_large_enough(photos):
                 return photo
@@ -62,13 +65,13 @@ def load_config(args):
 
     if len(config.read(path)) == 0:
         stderr_and_exit("Couldn't load config {0}\n".format(path))
-    if 'walls' not in config:
+    if not config.has_section('walls'):
         stderr_and_exit('Config missing [walls] section\n')
 
     # Print out all of the missing keys
     keys = ['api_key', 'api_secret', 'tags', 'height', 'width']
     for key in set(keys):
-        if key in config['walls']:
+        if config.has_option('walls', key):
             keys.remove(key)
     if keys:
         stderr_and_exit("Missing config keys: '{0}'\n"
@@ -78,7 +81,7 @@ def load_config(args):
     int_keys = ['height', 'width']
     for key in set(int_keys):
         try:
-            int(config['walls'][key])
+            config.getint('walls', key)
             int_keys.remove(key)
         except ValueError:
             pass
@@ -86,7 +89,7 @@ def load_config(args):
         stderr_and_exit("The following must be integers: '{0}'\n"
                         .format("', '".join(int_keys)))
 
-    return config['walls']
+    return config
 
 
 def main():

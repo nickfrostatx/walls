@@ -69,13 +69,13 @@ def test_default_config(config, monkeypatch):
     """Override expanduser to point to our temporary config file."""
     monkeypatch.setattr('os.path.expanduser', lambda x: str(config))
     cfg = load_config(['walls'])
-    assert cfg['api_key'] == 'myapikey'
+    assert cfg.get('walls', 'api_key') == 'myapikey'
 
 
 def test_supplied_config(config):
     """Test a config file passed as a command line argument."""
     cfg = load_config(['walls', config])
-    assert cfg['api_key'] == 'myapikey'
+    assert cfg.get('walls', 'api_key') == 'myapikey'
 
 
 def test_invalid_config():
