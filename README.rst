@@ -13,7 +13,7 @@ walls
 .. image:: https://img.shields.io/pypi/l/walls.svg
     :target: https://raw.githubusercontent.com/nickfrostatx/walls/master/LICENSE
 
-Random flickr wallpapers
+Random Flickr wallpapers
 
 Installation
 ------------

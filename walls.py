@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Random flickr wallpapers.
+Random Flickr wallpapers.
 
 :copyright: (c) 2015 by Nicholas Frost.
 :license: MIT, see LICENSE for more details.

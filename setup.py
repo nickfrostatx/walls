@@ -19,7 +19,7 @@ setup(
     author='Nick Frost',
     author_email='nickfrostatx@gmail.com',
     url='https://github.com/nickfrostatx/walls',
-    description='Random flickr wallpapers.',
+    description='Random Flickr wallpapers.',
     long_description=readme + '\n\n' + history,
     py_modules=['walls'],
     install_requires=[
