@@ -73,7 +73,7 @@ def load_config(args):
         stderr_and_exit('Config missing [walls] section\n')
 
     # Print out all of the missing keys
-    keys = ['api_key', 'api_secret', 'tags', 'height', 'width']
+    keys = ['api_key', 'api_secret', 'tags', 'width', 'height']
     for key in set(keys):
         if config.has_option('walls', key):
             keys.remove(key)
@@ -82,7 +82,7 @@ def load_config(args):
                         .format("', '".join(keys)))
 
     # Parse integer values
-    int_keys = ['height', 'width']
+    int_keys = ['width', 'height']
     for key in set(int_keys):
         try:
             config.getint('walls', key)
