@@ -30,7 +30,7 @@ def walls(config):
 
 class SystemExitContext(object):
 
-    """Run pytest.raises, and check the error message"""
+    """Run pytest.raises, and check the error message."""
 
     def __init__(self, msg, capsys):
         self.raises = pytest.raises(SystemExit)

@@ -29,25 +29,29 @@ class Walls(object):
     """The main object."""
 
     def __init__(self, config):
+        """Initial setup."""
         self.config = config
         self.flickr = flickrapi.FlickrAPI(config.get('walls', 'api_key'),
                                           config.get('walls', 'api_secret'))
 
     def download_photo(self):
+        """Download a photo to disk."""
         photo = first_photo()
 
-    def first_photo():
+    def first_photo(self):
+        """Find the id of the first criteria-matching photo."""
         results = flickr.walk(tags=config.get('walls', 'tags'), format='json')
         for photo in results.get('photos', []):
             if self.is_large_enough(photos):
                 return photo
 
     def is_large_enough(self, id):
+        """Check size requirements on a photo."""
         return True
 
 
-
 def stderr_and_exit(msg):
+    """Write out an error message and exit with code 1."""
     sys.stderr.write(msg)
     sys.exit(1)
 
@@ -93,10 +97,10 @@ def load_config(args):
 
 
 def main():
+    """Run the downloader from the command line."""
     config = load_config(sys.argv)
     walls = Walls(config)
     walls.download_photo()
-
 
 
 if __name__ == '__main__':
