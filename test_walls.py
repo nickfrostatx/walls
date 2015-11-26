@@ -78,5 +78,35 @@ def test_supplied_config(config):
     assert cfg.get('walls', 'api_key') == 'myapikey'
 
 
-def test_invalid_config():
-    """"""
+def test_invalid_config(errmsg):
+    """Make sure an error is raised if the config file can't be read."""
+    with errmsg("Couldn't load config fake.ini\n"):
+        load_config(['walls', 'fake.ini'])
+
+
+def test_config_missing(tmpdir, errmsg):
+    """Check behavior on missing config values."""
+    f = tmpdir.join('config.ini')
+    f.write('''
+[walls]
+api_secret = myapisecret
+width = 1920
+height = 1080
+    ''')
+    with errmsg("Missing config keys: 'api_key', 'tags'\n"):
+        load_config(['walls', str(f)])
+
+
+def test_config_types(tmpdir, errmsg):
+    """Check behavior on missing config values."""
+    f = tmpdir.join('config.ini')
+    f.write('''
+[walls]
+api_key = myapikey
+api_secret = myapisecret
+tags = sanfrancisco
+width = abc
+height = def
+    ''')
+    with errmsg("The following must be integers: 'width', 'height'\n"):
+        load_config(['walls', str(f)])
