@@ -6,10 +6,13 @@ Random flickr wallpapers.
 :license: MIT, see LICENSE for more details.
 """
 
-import configparser
 import flickrapi
 import os.path
 import sys
+try:
+    from configparser import ConfigParser
+except ImportError:
+    from ConfigParser import ConfigParser
 
 
 __author__ = 'Nick Frost'
@@ -48,7 +51,7 @@ def stderr_and_exit(msg):
 
 def load_config(args):
     """Load the config value from various arguments."""
-    config = configparser.ConfigParser()
+    config = ConfigParser()
 
     if len(args) == 1:
         path = os.path.expanduser('~/.wallsrc')
