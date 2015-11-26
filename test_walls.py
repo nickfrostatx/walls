@@ -11,12 +11,12 @@ import pytest
 def config(tmpdir):
     f = tmpdir.join('config.ini')
     f.write('''
-    [walls]
-    api_key = myapikey
-    api_secret = myapisecret
-    tags = sanfrancisco
-    width = 1920
-    height = 1080
+[walls]
+api_key = myapikey
+api_secret = myapisecret
+tags = sanfrancisco
+width = 1920
+height = 1080
     ''')
     return str(f)
 
