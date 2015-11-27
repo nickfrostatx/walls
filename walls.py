@@ -110,8 +110,7 @@ class Walls(object):
 
         If no such photo exists, return None.
         """
-        sizes = self.flickr.photos.getSizes(photo_id=pid, format='parsed-json',
-                                            sort='interestingness-desc')
+        sizes = self.flickr.photos_getSizes(photo_id=pid, format='parsed-json')
         min_width = self.config.getint('walls', 'width')
         min_height = self.config.getint('walls', 'height')
         smallest_url = None
