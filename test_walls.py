@@ -2,6 +2,7 @@
 """Test walls."""
 
 from walls import Walls, load_config, stderr_and_exit, main
+import py
 import pytest
 
 
@@ -206,3 +207,23 @@ def test_main(monkeypatch, config):
     monkeypatch.setattr('sys.argv', ['walls', config])
     monkeypatch.setattr('walls.Walls.run', lambda self: None)
     main()
+
+
+def test_download(monkeypatch, walls):
+
+    class FakeResponse(object):
+
+        def __init__(self, *a, **kw):
+            pass
+
+        def raise_for_status(self):
+            pass
+
+        def iter_content(self, *a, **kw):
+            for b in b'this is the data':
+                yield bytes([b])
+
+    monkeypatch.setattr('requests.get', FakeResponse)
+    walls.download('file.txt')
+    p = py.path.local(walls.config.get('walls', 'image_dir'), expanduser=True)
+    assert p.join('file.txt').read() == 'this is the data'

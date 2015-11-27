@@ -24,6 +24,7 @@ setup(
     py_modules=['walls'],
     install_requires=[
         'flickrapi',
+        'requests',
     ],
     extras_require={
         'testing': [

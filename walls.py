@@ -8,6 +8,7 @@ Random Flickr wallpapers.
 
 import flickrapi
 import os.path
+import requests
 import sys
 try:
     # Python 3.x
@@ -91,7 +92,7 @@ class Walls(object):
         photo_url = self.first_photo()
         if not photo_url:
             stderr_and_exit('No matching photos found.\n')
-        print(photo_url)
+        self.download(photo_url)
 
     def first_photo(self):
         """Find the id of the first criteria-matching photo."""
@@ -123,6 +124,18 @@ class Walls(object):
                     smallest_area = height * width
                     smallest_url = size['source']
         return smallest_url
+
+    def download(self, url):
+        """Download the image to disk."""
+        parent = os.path.expanduser(self.config.get('walls', 'image_dir'))
+        path = os.path.join(parent, url.split('/')[-1])
+        r = requests.get(url, stream=True)
+        r.raise_for_status()
+        with open(path, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=1024):
+                if chunk:
+                    f.write(chunk)
+        return path
 
 
 def main():
