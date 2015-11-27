@@ -175,3 +175,16 @@ def test_first_photo_invalid(walls, errmsg):
         data = d
         with errmsg('Unexpected data from Flickr.\n'):
             walls.first_photo()
+
+
+def test_first_photo(walls, errmsg):
+    def smallest_url(pid):
+        if pid == '2':
+            return '#{0}'.format(pid)
+    walls.smallest_url = smallest_url
+
+    walls.flickr.walk = lambda **kw: [{'id': '1'}, {'id': '2'}]
+    assert walls.first_photo() == '#2'
+
+    walls.flickr.walk = lambda **kw: []
+    assert walls.first_photo() is None
