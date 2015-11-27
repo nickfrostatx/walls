@@ -8,7 +8,6 @@ Random Flickr wallpapers.
 
 import flickrapi
 import os.path
-import py
 import sys
 try:
     # Python 3.x
@@ -69,8 +68,8 @@ def load_config(args):
                         .format("', '".join(int_keys)))
 
     # Check destination directory
-    path = py.path.local(config.get('walls', 'image_dir'), expanduser=True)
-    if not path.isdir():
+    path = os.path.expanduser(config.get('walls', 'image_dir'))
+    if not os.path.isdir(path):
         stderr_and_exit('The directory {0} does not exist.\n'
                         .format(config.get('walls', 'image_dir')))
 
