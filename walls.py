@@ -92,7 +92,10 @@ class Walls(object):
         photo_url = self.first_photo()
         if not photo_url:
             stderr_and_exit('No matching photos found.\n')
-        self.download(photo_url)
+        try:
+            self.download(photo_url)
+        except IOError:
+            stderr_and_exit('Error downloading image.\n')
 
     def first_photo(self):
         """Find the id of the first criteria-matching photo."""

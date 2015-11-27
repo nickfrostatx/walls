@@ -4,6 +4,7 @@
 from walls import Walls, load_config, stderr_and_exit, main
 import py
 import pytest
+import requests
 
 
 @pytest.fixture
@@ -26,6 +27,19 @@ def walls(config):
     """Create a Walls object with a default config."""
     cfg = load_config(['walls', config])
     return Walls(cfg)
+
+
+class FakeResponse(requests.Response):
+
+    """Used to emulate some requests behavior."""
+
+    def __call__(self, *a, **kw):
+        """Lets us use an instance to replace get()."""
+        return self
+
+    def iter_content(self, *a, **kw):
+        for c in 'this is the data':
+            yield c.encode()
 
 
 class SystemExitContext(object):
@@ -197,9 +211,18 @@ def test_first_photo(walls):
     assert walls.first_photo() is None
 
 
-def test_run_invalid(walls, errmsg):
+def test_run_empty_search(walls, errmsg):
     walls.first_photo = lambda **kw: None
     with errmsg('No matching photos found.\n'):
+        walls.run()
+
+
+def test_run_bad_request(monkeypatch, walls, errmsg):
+    def raise_function(*a, **kw):
+        raise IOError()
+    monkeypatch.setattr('requests.get', raise_function)
+    walls.first_photo = lambda: 'url'
+    with errmsg('Error downloading image.\n'):
         walls.run()
 
 
@@ -210,20 +233,22 @@ def test_main(monkeypatch, config):
 
 
 def test_download(monkeypatch, walls):
-
-    class FakeResponse(object):
-
-        def __init__(self, *a, **kw):
-            pass
-
-        def raise_for_status(self):
-            pass
-
-        def iter_content(self, *a, **kw):
-            for c in 'this is the data':
-                yield c.encode()
-
-    monkeypatch.setattr('requests.get', FakeResponse)
+    resp = FakeResponse()
+    resp.status_code = 200
+    monkeypatch.setattr('requests.get', resp)
     walls.download('file.txt')
     p = py.path.local(walls.config.get('walls', 'image_dir'), expanduser=True)
     assert p.join('file.txt').read() == 'this is the data'
+
+
+def test_download_status(monkeypatch, walls):
+    resp = FakeResponse()
+    resp.status_code = 418
+    monkeypatch.setattr('requests.get', resp)
+    with pytest.raises(IOError):
+        walls.download('file.txt')
+
+
+def test_download_real_status(monkeypatch, walls):
+    with pytest.raises(IOError):
+        walls.download('http://0.0.0.0:1234')
