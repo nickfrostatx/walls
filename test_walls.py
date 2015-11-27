@@ -220,8 +220,8 @@ def test_download(monkeypatch, walls):
             pass
 
         def iter_content(self, *a, **kw):
-            for b in b'this is the data':
-                yield bytes([b])
+            for c in 'this is the data':
+                yield c.encode()
 
     monkeypatch.setattr('requests.get', FakeResponse)
     walls.download('file.txt')
