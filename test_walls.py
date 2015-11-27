@@ -25,7 +25,7 @@ height = 1080
 @pytest.fixture
 def walls(config):
     """Create a Walls object with a default config."""
-    cfg = load_config(config)
+    cfg = load_config(['walls', config])
     return Walls(cfg)
 
 
@@ -140,3 +140,27 @@ height = 1080
     f.write(cfg.format(f))
     with errmsg('The directory {0} does not exist.\n'.format(f)):
         load_config(['walls', str(f)])
+
+
+def test_smallest_url(walls, monkeypatch):
+    data = {
+        'sizes': {'size': [
+            {
+                'width': '1280',
+                'height': '720',
+                'source': 'url1',
+            },
+            {
+                'width': '1920',
+                'height': '1080',
+                'source': 'url2',
+            },
+            {
+                'width': '2560',
+                'height': '1440',
+                'source': 'url3',
+            },
+        ]},
+    }
+    walls.flickr.photos_getSizes = lambda **kw: data
+    assert walls.smallest_url('fake') == 'url2'
