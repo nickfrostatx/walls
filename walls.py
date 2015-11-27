@@ -100,7 +100,7 @@ class Walls(object):
         for photo in self.flickr.walk(tags=tags, format='etree'):
             try:
                 url = self.smallest_url(photo.get('id'))
-            except (KeyError, ValueError):
+            except (KeyError, ValueError, TypeError):
                 stderr_and_exit('Unexpected data from Flickr.\n')
             if url:
                 return url

@@ -164,3 +164,14 @@ def test_smallest_url(walls, monkeypatch):
     }
     walls.flickr.photos_getSizes = lambda **kw: data
     assert walls.smallest_url('fake') == 'url2'
+
+
+def test_first_photo_invalid(walls, errmsg, monkeypatch):
+    data = None
+    walls.flickr.photos_getSizes = lambda **kw: data
+    walls.flickr.walk = lambda **kw: [{'id': 1}]
+    for d in [[], {}, {'sizes': 1}, {'sizes': []}, {'sizes': {'size': 1}},
+              {'sizes': {'size': [1]}}, {'sizes': {'size': [{}]}}]:
+        data = d
+        with errmsg('Unexpected data from Flickr.\n'):
+            walls.first_photo()
