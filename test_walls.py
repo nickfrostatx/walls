@@ -169,7 +169,7 @@ def test_smallest_url(walls):
 def test_first_photo_invalid(walls, errmsg):
     data = None
     walls.flickr.photos_getSizes = lambda **kw: data
-    walls.flickr.walk = lambda **kw: [{'id': 1}]
+    walls.flickr.walk = lambda **kw: [{'id': '1'}]
     for d in [[], {}, {'sizes': 1}, {'sizes': []}, {'sizes': {'size': 1}},
               {'sizes': {'size': [1]}}, {'sizes': {'size': [{}]}}]:
         data = d
