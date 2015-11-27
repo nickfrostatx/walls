@@ -15,6 +15,7 @@ def config(tmpdir):
 api_key = myapikey
 api_secret = myapisecret
 tags = sanfrancisco
+image_dir = ~/Pictures/wallpaper/
 width = 1920
 height = 1080
     ''')
@@ -90,6 +91,7 @@ def test_config_missing(tmpdir, errmsg):
     f.write('''
 [walls]
 api_secret = myapisecret
+image_dir = ~/Pictures/wallpaper/
 width = 1920
 height = 1080
     ''')
@@ -105,6 +107,7 @@ def test_config_types(tmpdir, errmsg):
 api_key = myapikey
 api_secret = myapisecret
 tags = sanfrancisco
+image_dir = ~/Pictures/wallpaper/
 width = abc
 height = def
     ''')
