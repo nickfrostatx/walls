@@ -15,10 +15,10 @@ def config(tmpdir):
 api_key = myapikey
 api_secret = myapisecret
 tags = sanfrancisco
-image_dir = ~/Pictures/wallpaper/
+image_dir = {0}
 width = 1920
 height = 1080
-    ''')
+    '''.format(tmpdir))
     return str(f)
 
 
@@ -91,10 +91,10 @@ def test_config_missing(tmpdir, errmsg):
     f.write('''
 [walls]
 api_secret = myapisecret
-image_dir = ~/Pictures/wallpaper/
+image_dir = {0}
 width = 1920
 height = 1080
-    ''')
+    '''.format(tmpdir))
     with errmsg("Missing config keys: 'api_key', 'tags'\n"):
         load_config(['walls', str(f)])
 
@@ -107,9 +107,32 @@ def test_config_types(tmpdir, errmsg):
 api_key = myapikey
 api_secret = myapisecret
 tags = sanfrancisco
-image_dir = ~/Pictures/wallpaper/
+image_dir = {0}
 width = abc
 height = def
-    ''')
+    '''.format(tmpdir))
     with errmsg("The following must be integers: 'width', 'height'\n"):
+        load_config(['walls', str(f)])
+
+
+def test_config_dest(tmpdir, errmsg):
+    """Nonexistent destination directory."""
+    cfg = '''
+[walls]
+api_key = myapikey
+api_secret = myapisecret
+tags = sanfrancisco
+image_dir = {0}
+width = 1920
+height = 1080
+    '''
+
+    f = tmpdir.join('config1.ini')
+    f.write(cfg.format('/does/not/exist'))
+    with errmsg('The directory /does/not/exist does not exist.\n'):
+        load_config(['walls', str(f)])
+
+    f = tmpdir.join('config2.ini')
+    f.write(cfg.format(f))
+    with errmsg('The directory {0} does not exist.\n'.format(f)):
         load_config(['walls', str(f)])

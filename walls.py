@@ -8,6 +8,7 @@ Random Flickr wallpapers.
 
 import flickrapi
 import os.path
+import py
 import sys
 try:
     # Python 3.x
@@ -22,32 +23,6 @@ __copyright__ = 'Copyright 2015, Nicholas Frost'
 __license__ = 'MIT'
 __version__ = '0.1.0'
 __email__ = 'nickfrostatx@gmail.com'
-
-
-class Walls(object):
-
-    """The main object."""
-
-    def __init__(self, config):
-        """Initial setup."""
-        self.config = config
-        self.flickr = flickrapi.FlickrAPI(config.get('walls', 'api_key'),
-                                          config.get('walls', 'api_secret'))
-
-    def download_photo(self):
-        """Download a photo to disk."""
-        photo = first_photo()
-
-    def first_photo(self):
-        """Find the id of the first criteria-matching photo."""
-        results = flickr.walk(tags=config.get('walls', 'tags'), format='json')
-        for photo in results.get('photos', []):
-            if self.is_large_enough(photos):
-                return photo
-
-    def is_large_enough(self, id):
-        """Check size requirements on a photo."""
-        return True
 
 
 def stderr_and_exit(msg):
@@ -93,14 +68,70 @@ def load_config(args):
         stderr_and_exit("The following must be integers: '{0}'\n"
                         .format("', '".join(int_keys)))
 
+    # Check destination directory
+    path = py.path.local(config.get('walls', 'image_dir'), expanduser=True)
+    if not path.isdir():
+        stderr_and_exit('The directory {0} does not exist.\n'
+                        .format(config.get('walls', 'image_dir')))
+
     return config
+
+
+class Walls(object):
+
+    """The main object."""
+
+    def __init__(self, config):
+        """Initial setup."""
+        self.config = config
+        self.flickr = flickrapi.FlickrAPI(config.get('walls', 'api_key'),
+                                          config.get('walls', 'api_secret'))
+
+    def run(self):
+        """Find a photo, download it to disk."""
+        photo_url = self.first_photo()
+        if not photo_url:
+            stderr_and_exit('No matching photos found.\n')
+        print(photo_url)
+
+    def first_photo(self):
+        """Find the id of the first criteria-matching photo."""
+        tags = self.config.get('walls', 'tags')
+        for photo in self.flickr.walk(tags=tags, format='etree'):
+            try:
+                url = self.smallest_url(photo.get('id'))
+            except (KeyError, ValueError):
+                stderr_and_exit('Unexpected data from Flickr.\n')
+            if url:
+                return url
+
+    def smallest_url(self, pid):
+        """Return the url of the smallest photo above the dimensions.
+
+        If no such photo exists, return None.
+        """
+        sizes = self.flickr.photos.getSizes(photo_id=pid, format='parsed-json',
+                                            sort='interestingness-desc')
+        min_width = self.config.getint('walls', 'width')
+        min_height = self.config.getint('walls', 'width')
+        smallest_url = None
+        smallest_area = None
+        for size in sizes['sizes']['size']:
+            width = int(size['width'])
+            height = int(size['height'])
+            # Enforce a minimum height and width
+            if width >= min_width and height >= min_height:
+                if not smallest_url or height * width < smallest_area:
+                    smallest_area = height * width
+                    smallest_url = size['source']
+        return smallest_url
 
 
 def main():
     """Run the downloader from the command line."""
     config = load_config(sys.argv)
     walls = Walls(config)
-    walls.download_photo()
+    walls.run()
 
 
 if __name__ == '__main__':
