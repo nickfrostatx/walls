@@ -142,7 +142,7 @@ height = 1080
         load_config(['walls', str(f)])
 
 
-def test_smallest_url(walls, monkeypatch):
+def test_smallest_url(walls):
     data = {
         'sizes': {'size': [
             {
@@ -166,7 +166,7 @@ def test_smallest_url(walls, monkeypatch):
     assert walls.smallest_url('fake') == 'url2'
 
 
-def test_first_photo_invalid(walls, errmsg, monkeypatch):
+def test_first_photo_invalid(walls, errmsg):
     data = None
     walls.flickr.photos_getSizes = lambda **kw: data
     walls.flickr.walk = lambda **kw: [{'id': 1}]
