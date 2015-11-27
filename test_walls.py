@@ -188,3 +188,15 @@ def test_first_photo(walls):
 
     walls.flickr.walk = lambda **kw: []
     assert walls.first_photo() is None
+
+
+def test_run_invalid(walls, errmsg):
+    walls.first_photo = lambda **kw: None
+    with errmsg('No matching photos found.\n'):
+        walls.run()
+
+
+def test_main(monkeypatch, config):
+    monkeypatch.setattr('sys.argv', ['walls', str(config)])
+    monkeypatch.setattr('walls.Walls.run', lambda self: None)
+    main()
