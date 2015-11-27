@@ -70,7 +70,7 @@ def test_default_config(config, monkeypatch):
     """Override expanduser to point to our temporary config file."""
     def my_expanduser(path):
         if path == '~/.wallsrc':
-            return str(config)
+            return config
         return path
     monkeypatch.setattr('os.path.expanduser', my_expanduser)
     cfg = load_config(['walls'])
@@ -205,6 +205,6 @@ def test_run_invalid(walls, errmsg):
 
 
 def test_main(monkeypatch, config):
-    monkeypatch.setattr('sys.argv', ['walls', str(config)])
+    monkeypatch.setattr('sys.argv', ['walls', config])
     monkeypatch.setattr('walls.Walls.run', lambda self: None)
     main()
