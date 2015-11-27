@@ -3,7 +3,6 @@
 
 from contextlib import contextmanager
 from walls import Walls, load_config, stderr_and_exit, main
-import os.path
 import pytest
 
 
