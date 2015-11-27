@@ -177,7 +177,7 @@ def test_first_photo_invalid(walls, errmsg):
             walls.first_photo()
 
 
-def test_first_photo(walls, errmsg):
+def test_first_photo(walls):
     def smallest_url(pid):
         if pid == '2':
             return '#{0}'.format(pid)
