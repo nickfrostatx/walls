@@ -113,7 +113,7 @@ class Walls(object):
         sizes = self.flickr.photos.getSizes(photo_id=pid, format='parsed-json',
                                             sort='interestingness-desc')
         min_width = self.config.getint('walls', 'width')
-        min_height = self.config.getint('walls', 'width')
+        min_height = self.config.getint('walls', 'height')
         smallest_url = None
         smallest_area = None
         for size in sizes['sizes']['size']:
