@@ -89,6 +89,14 @@ def test_invalid_config(errmsg):
         load_config(['walls', 'fake.ini'])
 
 
+def test_config_no_walls(tmpdir, errmsg):
+    """Check for missing [walls] section."""
+    f = tmpdir.join('config.ini')
+    f.write('\n')
+    with errmsg('Config missing [walls] section.\n'):
+        load_config(['walls', str(f)])
+
+
 def test_config_missing(tmpdir, errmsg):
     """Check behavior on missing config values."""
     f = tmpdir.join('config.ini')

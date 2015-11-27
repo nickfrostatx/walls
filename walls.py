@@ -45,7 +45,7 @@ def load_config(args):
     if len(config.read(path)) == 0:
         stderr_and_exit("Couldn't load config {0}\n".format(path))
     if not config.has_section('walls'):
-        stderr_and_exit('Config missing [walls] section\n')
+        stderr_and_exit('Config missing [walls] section.\n')
 
     # Print out all of the missing keys
     keys = ['api_key', 'api_secret', 'tags', 'image_dir', 'width', 'height']
