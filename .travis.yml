@@ -14,5 +14,6 @@ deploy:
   user: nickfrostatx
   password:
     secure: MN468RRvpv0qHziFGTzMAzpOpGjJvdmUQ/PTj/N6QnNAHtP68TQzuIbZpOc8GN6oEYH5/4/nDrwPbUlTHRHytWpyQ4UlTvljLUHNzLxjN62mqhQ6BAqaHI64q4QDoKao8L/BX7hhcnX++cE3V3gyfsSNWWRl0+nSfW2z/85uUlvBwIz3bXVdXDrCNjetZA+ewpeBENnZqE+S/l3Ym7HyPXrl0eCiR/HRWA/+GhOPTlRsUZNgemJ4lop2Q5KOBoZ4cnBgX7nR31UC219P7itavwq7sNnaIOAnizqruE0xulyl1QOHEXQ0Y8VFasKTu1HgUG4LVY29KZquraEDOa4wbMclJ5LjY5CPeRNqUKuSIuENFkxKhRddKqHXA00hii4T6G0UUiJQL77/9BRSMg/ezqa/zWjTKWEP0AdIgFAXxflIy12ZqnV9G5u+ZlLNalXRis4avP/eXjZqPCiXemYDiJETp8o7b6jjIh8oUkerTm/ZR5fieNuceELDyciHoY0jXNLhoIDDc1/+JaOwbyMp8Gp+akzE4enuGcVLIW8MTvrTRE1GQgmNWIL2u2xKVU9fJgj4dFGqik1MC0pL4kAbUSZNy8YE+pbPa+x+gLSi9xvN/8Xw9PaHrKaN0CF9AlQ7g1ZDndFr6fPoxqrZ3SOB/+EwruJ73Ak92g1ve3vKJfg=
+  distributions: 'sdist bdist_wheel'
   on:
     tags: true
