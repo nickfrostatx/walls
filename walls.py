@@ -109,12 +109,16 @@ def download(url, dest):
     return path
 
 
-def run(config):
+def run(config, clear_opt=False):
     """Find an image and download it."""
     flickr = flickrapi.FlickrAPI(config.get('walls', 'api_key'),
                                  config.get('walls', 'api_secret'))
     width = config.getint('walls', 'width')
     height = config.getint('walls', 'height')
+
+    # Clear out the destination dir
+    if clear_opt:
+        clear_dir(os.path.expanduser(config.get('walls', 'image_dir')))
 
     # Find an image
     tags = config.get('walls', 'tags')
@@ -162,10 +166,7 @@ def main(args=sys.argv):
 
     config = load_config(cfg_path)
 
-    if clear_opt:
-        clear_dir(os.path.expanduser(config.get('walls', 'image_dir')))
-
-    run(config)
+    run(config, clear_opt)
 
 
 if __name__ == '__main__':

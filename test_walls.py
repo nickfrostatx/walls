@@ -98,7 +98,7 @@ def test_default_config(config, monkeypatch):
             return config
         return path
     monkeypatch.setattr('os.path.expanduser', my_expanduser)
-    monkeypatch.setattr('walls.run', lambda config: None)
+    monkeypatch.setattr('walls.run', lambda *a: None)
     walls.main(['walls'])
 
 
@@ -239,7 +239,7 @@ def test_run_bad_request(monkeypatch, config_obj, errmsg):
         walls.run(config_obj)
 
 
-def test_main(monkeypatch, config):
+def test_main(monkeypatch, config, errmsg):
     """Check that the arg parsing all works."""
     c = [False]
 
@@ -253,15 +253,17 @@ def test_main(monkeypatch, config):
         return path
 
     monkeypatch.setattr('os.path.expanduser', my_expanduser)
+    monkeypatch.setattr('flickrapi.FlickrAPI.walk', lambda self, **kw: [])
     monkeypatch.setattr('walls.clear_dir', set_clear)
-    monkeypatch.setattr('walls.run', lambda config: None)
 
-    walls.main(['walls'])
+    with errmsg('No matching photos found.\n'):
+        walls.main(['walls'])
     assert not c[0]
 
     for args in [['-c'], ['--clear'], ['-c', config], [config, '-c'],
                  ['--clear', config], [config, '--clear']]:
-        walls.main(['walls'] + args)
+        with errmsg('No matching photos found.\n'):
+            walls.main(['walls'] + args)
         assert c[0]
         # Reset clear
         c[0] = False
