@@ -78,72 +78,66 @@ def clear_dir(path):
             os.unlink(f_path)
 
 
-class Walls(object):
+def smallest_url(flickr, pid, min_width, min_height):
+    """Return the url of the smallest photo above the dimensions.
 
-    """The main object."""
+    If no such photo exists, return None.
+    """
+    sizes = flickr.photos_getSizes(photo_id=pid, format='parsed-json')
+    smallest_url = None
+    smallest_area = None
+    for size in sizes['sizes']['size']:
+        width = int(size['width'])
+        height = int(size['height'])
+        # Enforce a minimum height and width
+        if width >= min_width and height >= min_height:
+            if not smallest_url or height * width < smallest_area:
+                smallest_area = height * width
+                smallest_url = size['source']
+    return smallest_url
 
-    def __init__(self, config):
-        """Initial setup."""
-        self.config = config
-        self.flickr = flickrapi.FlickrAPI(config.get('walls', 'api_key'),
-                                          config.get('walls', 'api_secret'))
 
-    def run(self):
-        """Find a photo, download it to disk."""
-        photo_url = self.first_photo()
-        if not photo_url:
-            stderr_and_exit('No matching photos found.\n')
+def download(url, dest):
+    """Download the image to disk."""
+    path = os.path.join(dest, url.split('/')[-1])
+    r = requests.get(url, stream=True)
+    r.raise_for_status()
+    with open(path, 'wb') as f:
+        for chunk in r.iter_content(chunk_size=1024):
+            if chunk:
+                f.write(chunk)
+    return path
+
+
+def run(config):
+    """Find an image and download it."""
+    flickr = flickrapi.FlickrAPI(config.get('walls', 'api_key'),
+                                 config.get('walls', 'api_secret'))
+    width = config.getint('walls', 'width')
+    height = config.getint('walls', 'height')
+
+    # Find an image
+    tags = config.get('walls', 'tags')
+    for photo in flickr.walk(tags=tags, format='etree'):
         try:
-            self.download(photo_url)
-        except IOError:
-            stderr_and_exit('Error downloading image.\n')
+            photo_url = smallest_url(flickr, photo.get('id'), width, height)
+            if photo_url:
+                break
+        except (KeyError, ValueError, TypeError):
+            stderr_and_exit('Unexpected data from Flickr.\n')
+    else:
+        stderr_and_exit('No matching photos found.\n')
 
-    def first_photo(self):
-        """Find the id of the first criteria-matching photo."""
-        tags = self.config.get('walls', 'tags')
-        for photo in self.flickr.walk(tags=tags, format='etree'):
-            try:
-                url = self.smallest_url(photo.get('id'))
-            except (KeyError, ValueError, TypeError):
-                stderr_and_exit('Unexpected data from Flickr.\n')
-            if url:
-                return url
-
-    def smallest_url(self, pid):
-        """Return the url of the smallest photo above the dimensions.
-
-        If no such photo exists, return None.
-        """
-        sizes = self.flickr.photos_getSizes(photo_id=pid, format='parsed-json')
-        min_width = self.config.getint('walls', 'width')
-        min_height = self.config.getint('walls', 'height')
-        smallest_url = None
-        smallest_area = None
-        for size in sizes['sizes']['size']:
-            width = int(size['width'])
-            height = int(size['height'])
-            # Enforce a minimum height and width
-            if width >= min_width and height >= min_height:
-                if not smallest_url or height * width < smallest_area:
-                    smallest_area = height * width
-                    smallest_url = size['source']
-        return smallest_url
-
-    def download(self, url):
-        """Download the image to disk."""
-        parent = os.path.expanduser(self.config.get('walls', 'image_dir'))
-        path = os.path.join(parent, url.split('/')[-1])
-        r = requests.get(url, stream=True)
-        r.raise_for_status()
-        with open(path, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=1024):
-                if chunk:
-                    f.write(chunk)
-        return path
+    # Download the image
+    dest = os.path.expanduser(config.get('walls', 'image_dir'))
+    try:
+        download(photo_url, dest)
+    except IOError:
+        stderr_and_exit('Error downloading image.\n')
 
 
 def main(args=sys.argv):
-    """Run the downloader from the command line."""
+    """Parse the arguments, and pass the config object on to run."""
     # Don't make changes to sys.argv
     args = list(args)
 
@@ -171,8 +165,7 @@ def main(args=sys.argv):
     if clear_opt:
         clear_dir(os.path.expanduser(config.get('walls', 'image_dir')))
 
-    walls = Walls(config)
-    walls.run()
+    run(config)
 
 
 if __name__ == '__main__':

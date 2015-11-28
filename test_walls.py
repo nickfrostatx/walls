@@ -1,10 +1,17 @@
 # -*- coding: utf-8 -*-
 """Test walls."""
 
-from walls import Walls, load_config, clear_dir, stderr_and_exit, main
+import flickrapi
 import py
 import pytest
 import requests
+import walls
+try:
+    # Python 3.x
+    from configparser import ConfigParser
+except ImportError:
+    # Python 2.x
+    from ConfigParser import SafeConfigParser as ConfigParser
 
 
 @pytest.fixture
@@ -23,10 +30,15 @@ height = 1080
 
 
 @pytest.fixture
-def walls(config):
-    """Create a Walls object with a default config."""
-    cfg = load_config(config)
-    return Walls(cfg)
+def config_obj(config):
+    cfg = ConfigParser()
+    cfg.read(config)
+    return cfg
+
+
+@pytest.fixture
+def flickr():
+    return flickrapi.FlickrAPI('myapikey', 'myapisecret')
 
 
 class FakeResponse(requests.Response):
@@ -70,13 +82,13 @@ def errmsg(capsys):
 def test_stderr_and_exit(errmsg):
     """Make sure that stderr_and_exit (and therefore errmsg) works."""
     with errmsg('Some error message'):
-        stderr_and_exit('Some error message')
+        walls.stderr_and_exit('Some error message')
 
 
 def test_usage(errmsg):
     """Make sure we print out the usage if the arguments are invalid."""
     with errmsg('Usage: walls [-c] [config_file]\n'):
-        main(['walls', 'config_file', 'blah'])
+        walls.main(['walls', 'config_file', 'blah'])
 
 
 def test_default_config(config, monkeypatch):
@@ -86,20 +98,20 @@ def test_default_config(config, monkeypatch):
             return config
         return path
     monkeypatch.setattr('os.path.expanduser', my_expanduser)
-    monkeypatch.setattr('walls.Walls.run', lambda self: None)
-    main(['walls'])
+    monkeypatch.setattr('walls.run', lambda config: None)
+    walls.main(['walls'])
 
 
 def test_supplied_config(config):
     """Test a config file passed as a command line argument."""
-    cfg = load_config(config)
+    cfg = walls.load_config(config)
     assert cfg.get('walls', 'api_key') == 'myapikey'
 
 
 def test_invalid_config(errmsg):
     """Make sure an error is raised if the config file can't be read."""
     with errmsg("Couldn't load config fake.ini\n"):
-        load_config('fake.ini')
+        walls.load_config('fake.ini')
 
 
 def test_config_no_walls(tmpdir, errmsg):
@@ -107,7 +119,7 @@ def test_config_no_walls(tmpdir, errmsg):
     f = tmpdir.join('config.ini')
     f.write('\n')
     with errmsg('Config missing [walls] section.\n'):
-        load_config(str(f))
+        walls.load_config(str(f))
 
 
 def test_config_missing(tmpdir, errmsg):
@@ -121,7 +133,7 @@ width = 1920
 height = 1080
     '''.format(tmpdir))
     with errmsg("Missing config keys: 'api_key', 'tags'\n"):
-        load_config(str(f))
+        walls.load_config(str(f))
 
 
 def test_config_types(tmpdir, errmsg):
@@ -137,7 +149,7 @@ width = abc
 height = def
     '''.format(tmpdir))
     with errmsg("The following must be integers: 'width', 'height'\n"):
-        load_config(str(f))
+        walls.load_config(str(f))
 
 
 def test_config_dest(tmpdir, errmsg):
@@ -155,12 +167,12 @@ height = 1080
     f = tmpdir.join('config1.ini')
     f.write(cfg.format('/does/not/exist'))
     with errmsg('The directory /does/not/exist does not exist.\n'):
-        load_config(str(f))
+        walls.load_config(str(f))
 
     f = tmpdir.join('config2.ini')
     f.write(cfg.format(f))
     with errmsg('The directory {0} does not exist.\n'.format(f)):
-        load_config(str(f))
+        walls.load_config(str(f))
 
 
 def test_clear_dir(tmpdir):
@@ -168,11 +180,11 @@ def test_clear_dir(tmpdir):
     tmpdir.join('b.txt').write('test2')
     tmpdir.mkdir('dir').join('nested.txt').write('test3')
     assert len(tmpdir.listdir()) == 3
-    clear_dir(str(tmpdir))
+    walls.clear_dir(str(tmpdir))
     assert len(tmpdir.listdir()) == 1
 
 
-def test_smallest_url(walls):
+def test_smallest_url(flickr):
     data = {
         'sizes': {'size': [
             {
@@ -192,47 +204,39 @@ def test_smallest_url(walls):
             },
         ]},
     }
-    walls.flickr.photos_getSizes = lambda **kw: data
-    assert walls.smallest_url('fake') == 'url2'
+    flickr.photos_getSizes = lambda **kw: data
+    assert walls.smallest_url(flickr, 'fake', 1920, 1080) == 'url2'
 
 
-def test_first_photo_invalid(walls, errmsg):
+def test_first_photo_invalid(monkeypatch, config_obj, errmsg):
     data = None
-    walls.flickr.photos_getSizes = lambda **kw: data
-    walls.flickr.walk = lambda **kw: [{'id': '1'}]
+    monkeypatch.setattr('flickrapi.FlickrAPI.photos_getSizes',
+                        lambda self, **kw: data, raising=False)
+    monkeypatch.setattr('flickrapi.FlickrAPI.walk',
+                        lambda self, **kw: [{'id': '1'}])
     for d in [[], {}, {'sizes': 1}, {'sizes': []}, {'sizes': {'size': 1}},
               {'sizes': {'size': [1]}}, {'sizes': {'size': [{}]}}]:
         data = d
         with errmsg('Unexpected data from Flickr.\n'):
-            walls.first_photo()
+            walls.run(config_obj)
 
 
-def test_first_photo(walls):
-    def smallest_url(pid):
-        if pid == '2':
-            return '#{0}'.format(pid)
-    walls.smallest_url = smallest_url
-
-    walls.flickr.walk = lambda **kw: [{'id': '1'}, {'id': '2'}]
-    assert walls.first_photo() == '#2'
-
-    walls.flickr.walk = lambda **kw: []
-    assert walls.first_photo() is None
-
-
-def test_run_empty_search(walls, errmsg):
-    walls.first_photo = lambda **kw: None
+def test_run_empty_search(monkeypatch, config_obj, errmsg):
+    monkeypatch.setattr('flickrapi.FlickrAPI.walk', lambda self, **kw: [])
     with errmsg('No matching photos found.\n'):
-        walls.run()
+        walls.run(config_obj)
 
 
-def test_run_bad_request(monkeypatch, walls, errmsg):
+def test_run_bad_request(monkeypatch, config_obj, errmsg):
     def raise_function(*a, **kw):
         raise IOError()
     monkeypatch.setattr('requests.get', raise_function)
+    monkeypatch.setattr('flickrapi.FlickrAPI.walk',
+                        lambda self, **kw: [{'id': 1}])
+    monkeypatch.setattr('walls.smallest_url', lambda *a: 'http://example.com')
     walls.first_photo = lambda: 'url'
     with errmsg('Error downloading image.\n'):
-        walls.run()
+        walls.run(config_obj)
 
 
 def test_main(monkeypatch, config):
@@ -250,36 +254,35 @@ def test_main(monkeypatch, config):
 
     monkeypatch.setattr('os.path.expanduser', my_expanduser)
     monkeypatch.setattr('walls.clear_dir', set_clear)
-    monkeypatch.setattr('walls.Walls.run', lambda self: None)
+    monkeypatch.setattr('walls.run', lambda config: None)
 
-    main(['walls'])
+    walls.main(['walls'])
     assert not c[0]
 
     for args in [['-c'], ['--clear'], ['-c', config], [config, '-c'],
                  ['--clear', config], [config, '--clear']]:
-        main(['walls'] + args)
+        walls.main(['walls'] + args)
         assert c[0]
         # Reset clear
         c[0] = False
 
 
-def test_download(monkeypatch, walls):
+def test_download(monkeypatch, tmpdir):
     resp = FakeResponse()
     resp.status_code = 200
     monkeypatch.setattr('requests.get', resp)
-    walls.download('file.txt')
-    p = py.path.local(walls.config.get('walls', 'image_dir'), expanduser=True)
-    assert p.join('file.txt').read() == 'this is the data'
+    walls.download('file.txt', str(tmpdir))
+    assert tmpdir.join('file.txt').read() == 'this is the data'
 
 
-def test_download_status(monkeypatch, walls):
+def test_download_status(monkeypatch, tmpdir):
     resp = FakeResponse()
     resp.status_code = 418
     monkeypatch.setattr('requests.get', resp)
     with pytest.raises(IOError):
-        walls.download('file.txt')
+        walls.download('file.txt', str(tmpdir))
 
 
-def test_download_real_status(monkeypatch, walls):
+def test_download_real_status(monkeypatch, tmpdir):
     with pytest.raises(IOError):
-        walls.download('http://0.0.0.0:1234')
+        walls.download('http://0.0.0.0:1234', str(tmpdir))
