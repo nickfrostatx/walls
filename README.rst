@@ -44,6 +44,8 @@ Usage
 
 .. code-block:: bash
 
-    $ walls [config_file]
+    $ walls [-c] [config_file]
+
+``-c`` or ``--clear`` will clear out images in the destination directory.
 
 If supplied, ``config_file`` will be used instead of ``~/.wallsrc``.

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Test walls."""
 
-from walls import Walls, load_config, stderr_and_exit, main
+from walls import Walls, load_config, clear_dir, stderr_and_exit, main
 import py
 import pytest
 import requests
@@ -25,7 +25,7 @@ height = 1080
 @pytest.fixture
 def walls(config):
     """Create a Walls object with a default config."""
-    cfg = load_config(['walls', config])
+    cfg = load_config(config)
     return Walls(cfg)
 
 
@@ -75,8 +75,8 @@ def test_stderr_and_exit(errmsg):
 
 def test_usage(errmsg):
     """Make sure we print out the usage if the arguments are invalid."""
-    with errmsg('Usage: walls [config_file]\n'):
-        load_config(['walls', 'config_file', 'blah'])
+    with errmsg('Usage: walls [-c] [config_file]\n'):
+        main(['walls', 'config_file', 'blah'])
 
 
 def test_default_config(config, monkeypatch):
@@ -86,20 +86,20 @@ def test_default_config(config, monkeypatch):
             return config
         return path
     monkeypatch.setattr('os.path.expanduser', my_expanduser)
-    cfg = load_config(['walls'])
-    assert cfg.get('walls', 'api_key') == 'myapikey'
+    monkeypatch.setattr('walls.Walls.run', lambda self: None)
+    main(['walls'])
 
 
 def test_supplied_config(config):
     """Test a config file passed as a command line argument."""
-    cfg = load_config(['walls', config])
+    cfg = load_config(config)
     assert cfg.get('walls', 'api_key') == 'myapikey'
 
 
 def test_invalid_config(errmsg):
     """Make sure an error is raised if the config file can't be read."""
     with errmsg("Couldn't load config fake.ini\n"):
-        load_config(['walls', 'fake.ini'])
+        load_config('fake.ini')
 
 
 def test_config_no_walls(tmpdir, errmsg):
@@ -107,7 +107,7 @@ def test_config_no_walls(tmpdir, errmsg):
     f = tmpdir.join('config.ini')
     f.write('\n')
     with errmsg('Config missing [walls] section.\n'):
-        load_config(['walls', str(f)])
+        load_config(str(f))
 
 
 def test_config_missing(tmpdir, errmsg):
@@ -121,7 +121,7 @@ width = 1920
 height = 1080
     '''.format(tmpdir))
     with errmsg("Missing config keys: 'api_key', 'tags'\n"):
-        load_config(['walls', str(f)])
+        load_config(str(f))
 
 
 def test_config_types(tmpdir, errmsg):
@@ -137,7 +137,7 @@ width = abc
 height = def
     '''.format(tmpdir))
     with errmsg("The following must be integers: 'width', 'height'\n"):
-        load_config(['walls', str(f)])
+        load_config(str(f))
 
 
 def test_config_dest(tmpdir, errmsg):
@@ -155,12 +155,21 @@ height = 1080
     f = tmpdir.join('config1.ini')
     f.write(cfg.format('/does/not/exist'))
     with errmsg('The directory /does/not/exist does not exist.\n'):
-        load_config(['walls', str(f)])
+        load_config(str(f))
 
     f = tmpdir.join('config2.ini')
     f.write(cfg.format(f))
     with errmsg('The directory {0} does not exist.\n'.format(f)):
-        load_config(['walls', str(f)])
+        load_config(str(f))
+
+
+def test_clear_dir(tmpdir):
+    tmpdir.join('a.txt').write('test1')
+    tmpdir.join('b.txt').write('test2')
+    tmpdir.mkdir('dir').join('nested.txt').write('test3')
+    assert len(tmpdir.listdir()) == 3
+    clear_dir(str(tmpdir))
+    assert len(tmpdir.listdir()) == 1
 
 
 def test_smallest_url(walls):
@@ -227,9 +236,31 @@ def test_run_bad_request(monkeypatch, walls, errmsg):
 
 
 def test_main(monkeypatch, config):
-    monkeypatch.setattr('sys.argv', ['walls', config])
+    """Check that the arg parsing all works."""
+    c = [False]
+
+    def set_clear(*a):
+        """Remember that clear was run."""
+        c[0] = True
+
+    def my_expanduser(path):
+        if path == '~/.wallsrc':
+            return config
+        return path
+
+    monkeypatch.setattr('os.path.expanduser', my_expanduser)
+    monkeypatch.setattr('walls.clear_dir', set_clear)
     monkeypatch.setattr('walls.Walls.run', lambda self: None)
-    main()
+
+    main(['walls'])
+    assert not c[0]
+
+    for args in [['-c'], ['--clear'], ['-c', config], [config, '-c'],
+                 ['--clear', config], [config, '--clear']]:
+        main(['walls'] + args)
+        assert c[0]
+        # Reset clear
+        c[0] = False
 
 
 def test_download(monkeypatch, walls):

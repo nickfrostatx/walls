@@ -31,16 +31,9 @@ def stderr_and_exit(msg):
     sys.exit(1)
 
 
-def load_config(args):
+def load_config(path):
     """Load the config value from various arguments."""
     config = ConfigParser()
-
-    if len(args) == 1:
-        path = os.path.expanduser('~/.wallsrc')
-    elif len(args) == 2:
-        path = args[1]
-    else:
-        stderr_and_exit('Usage: walls [config_file]\n')
 
     if len(config.read(path)) == 0:
         stderr_and_exit("Couldn't load config {0}\n".format(path))
@@ -75,6 +68,14 @@ def load_config(args):
                         .format(config.get('walls', 'image_dir')))
 
     return config
+
+
+def clear_dir(path):
+    """Empty out the image directory."""
+    for f in os.listdir(path):
+        f_path = os.path.join(path, f)
+        if os.path.isfile(f_path) or os.path.islink(f_path):
+            os.unlink(f_path)
 
 
 class Walls(object):
@@ -141,9 +142,35 @@ class Walls(object):
         return path
 
 
-def main():
+def main(args=sys.argv):
     """Run the downloader from the command line."""
-    config = load_config(sys.argv)
+    # Don't make changes to sys.argv
+    args = list(args)
+
+    # Remove arg[0]
+    args.pop(0)
+
+    # Pop off the options
+    clear_opt = False
+    if '-c' in args:
+        args.remove('-c')
+        clear_opt = True
+    elif '--clear' in args:
+        args.remove('--clear')
+        clear_opt = True
+
+    if len(args) == 0:
+        cfg_path = os.path.expanduser('~/.wallsrc')
+    elif len(args) == 1:
+        cfg_path = args[0]
+    else:
+        stderr_and_exit('Usage: walls [-c] [config_file]\n')
+
+    config = load_config(cfg_path)
+
+    if clear_opt:
+        clear_dir(os.path.expanduser(config.get('walls', 'image_dir')))
+
     walls = Walls(config)
     walls.run()
 
