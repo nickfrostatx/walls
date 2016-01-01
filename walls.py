@@ -2,7 +2,7 @@
 """
 Random Flickr wallpapers.
 
-:copyright: (c) 2015 by Nicholas Frost.
+:copyright: (c) 2016 by Nicholas Frost.
 :license: MIT, see LICENSE for more details.
 """
 
@@ -19,7 +19,7 @@ except ImportError:
 
 
 __author__ = 'Nick Frost'
-__copyright__ = 'Copyright 2015, Nicholas Frost'
+__copyright__ = 'Copyright 2016, Nicholas Frost'
 __license__ = 'MIT'
 __version__ = '0.1.2'
 __email__ = 'nickfrostatx@gmail.com'
